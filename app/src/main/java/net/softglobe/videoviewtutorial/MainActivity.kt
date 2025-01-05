@@ -1,39 +1,53 @@
 package net.softglobe.videoviewtutorial
 
-import android.net.Uri
 import android.os.Bundle
-import android.webkit.WebChromeClient
-import android.webkit.WebView
-import android.widget.MediaController
-import android.widget.VideoView
+import android.view.View
+import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.FullscreenListener
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.options.IFramePlayerOptions
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
 
+
 class MainActivity : AppCompatActivity() {
+    lateinit var youTubePlayerView : YouTubePlayerView
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val videoView = findViewById<VideoView>(R.id.video_view)
-        val mediaController = MediaController(this)
-        mediaController.setAnchorView(videoView)
-        videoView.setMediaController(mediaController)
-        videoView.setVideoURI(Uri.parse("android.resource://"+packageName+"/"+R.raw.video))
+        youTubePlayerView = findViewById(R.id.youtube_player_view)
+        lifecycle.addObserver(youTubePlayerView)
+        youTubePlayerView.enableAutomaticInitialization = false
 
-        val webView = findViewById<WebView>(R.id.web_view)
-        webView.settings.javaScriptEnabled = true
-        val path = "<iframe width=\"100%\" height=\"100%\" src=\"https://www.youtube.com/embed/AapEF9ZL6mw?si=XrGqqL8zj7NNo2Ra\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" referrerpolicy=\"strict-origin-when-cross-origin\" allowfullscreen></iframe>"
-        webView.webChromeClient = WebChromeClient()
-        webView.loadData(path, "text/html", "UTF-8")
+        val youTubePlayerListener = object : AbstractYouTubePlayerListener() {
+            override fun onReady(youTubePlayer: YouTubePlayer) {
+                super.onReady(youTubePlayer)
+                youTubePlayer.cueVideo("AapEF9ZL6mw", 0F)
+            }
+        }
 
-//        val youtubePlayerView = findViewById<YouTubePlayerView>(R.id.youtube_player_view)
-//        youtubePlayerView.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
-//            override fun onReady(youTubePlayer: YouTubePlayer) {
-//                super.onReady(youTubePlayer)
-//                youTubePlayer.cueVideo("AapEF9ZL6mw", 0F)
-//            }
-//        })
+        val iFramePlayerOptions: IFramePlayerOptions = IFramePlayerOptions.Builder()
+            .controls(1) // enable full screen button
+            .fullscreen(1)
+            .build()
+
+        youTubePlayerView.initialize(youTubePlayerListener, iFramePlayerOptions)
+
+
+        youTubePlayerView.addFullscreenListener(object : FullscreenListener {
+            lateinit var fullView  : View
+            override fun onEnterFullscreen(fullscreenView: View, exitFullscreen: () -> Unit) {
+                findViewById<FrameLayout>(R.id.main).addView(fullscreenView)
+                fullView = fullscreenView
+            }
+
+            override fun onExitFullscreen() {
+                findViewById<FrameLayout>(R.id.main).removeView(fullView)
+            }
+
+        })
     }
+
 }
